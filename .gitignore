@@ -1,0 +1,5 @@
+designs/*/out/
+tests/out/
+designs/*/ref/private/
+*.tmp
+__pycache__/
