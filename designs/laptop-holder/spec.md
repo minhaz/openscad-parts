@@ -1,5 +1,5 @@
 # laptop-holder spec
-Status: APPROVED (2026-10-10)
+Status: APPROVED (2026-10-10), rev 2 (2026-10-10, per-slot thick widths; user chose option 1), rev 3 (2026-10-10, 4 thick devices: one 20 mm device dropped), rev 4 (2026-10-10, nose taper + rake, user)
 
 Source: `ref/idea.md` (user, revised 2026-10-10). Numbers below are user-stated or user-measured unless listed under Assumptions.
 
@@ -16,26 +16,31 @@ Axes (print = use orientation):
 ## Real objects and interfaces
 | Interface | Object dim (measured) | Fit class | Clearance (mm) | Axis |
 |---|---|---|---|---|
-| Thick device in thick slot | width 22.86 (0.90 in) | custom slide + lean (not tolerances.scad) | 1.64 total (slot 24.5) | Y (slide in from front) |
+| Thick device 1 (slot 1) | width 22.86 (0.90 in) | custom slide + lean (not tolerances.scad) | 1.64 total (slot 24.50) | Y (slide in from front) |
+| Thick device 2 | width 20.0 | same | 1.64 total (slot 21.64) | Y |
+| Thick devices 3, 4 | width 11.0 | same | 1.64 total (slot 12.64) | Y |
 | Thin device in thin slot | width 7.60 (user, 2026-10-10; was 6.10 in idea.md) | custom slide + lean (not tolerances.scad) | 1.20 total (slot 8.8) | Y (slide in from front) |
-| Thick device length / height | 361.95 / 257.05 | - | - | tipping, shelf checks |
+| Thick device 1 length / height | 361.95 / 257.05 | - | - | tipping, shelf checks |
+| Thick device 2 length / height | 323.85 / 228.60 (12.75 x 9 in, user-stated) | - | - | tipping, shelf checks |
+| Thick devices 3, 4 length / height | 304.80 / 203.20 (12 x 8 in, user-stated) | - | - | tipping, shelf checks |
 | Thin device length / height | 330.20 / 209.55 | - | - | tipping, shelf checks |
 | Shelf clear height | 336.55 | - | - | Z |
 | Shelf depth | 381+ (open back) | - | - | not limiting |
 
-All device dims: calipers, 3 points, max value, including rubber feet, not wedge-shaped. Which device edge (hinge or opening) stands on the floor varies; design does not depend on it.
+All device widths: calipers, 3 points, max value, including rubber feet, not wedge-shaped. Which device edge (hinge or opening) stands on the floor varies; design does not depend on it.
 
-Clearance rationale: tolerance coupon (Bambu PLA Basic, 2026-10-10) gives PLA slot `free` = 0.20 mm and slots print near nominal, so effective clearance is about the modeled 1.64 / 1.20. Intentional: hand slide-in plus about 0.8 deg lean (thick 0.82 deg, thin 0.76 deg).
+Clearance rationale: tolerance coupon (Bambu PLA Basic, 2026-10-10) gives PLA slot `free` = 0.20 mm and slots print near nominal, so effective clearance is about the modeled 1.64 / 1.20. Intentional: hand slide-in plus about 0.8 deg lean (thick 0.82 / 0.91 / 1.03 deg for 115 / 103 / 91 mm walls, thin 0.76 deg).
 
 ## Overall geometry
 
 ### Layout across X
 - Thick group on `thick_side` (default left), thin group on the other side.
+- Thick group: one slot per entry of `thick_device_widths`, in list order from the outer (left) edge inward: 22.86, 20, 11, 11 -> slots 24.50, 21.64, 12.64, 12.64. `thick_device_count` = list length (derived).
 - Walls:
   - Thick group present: `thick_device_count + 1` thick walls (outer, dividers, wall between groups). Thin group adds `thin_device_count` thin walls (dividers + its outer wall).
   - Thin only: `thin_device_count + 1` thin walls.
-  - Wall between groups uses thick values (width, height, length).
-- Slot width = `<t>_slot_width + 2 * felt_thickness`.
+  - Wall between groups uses thick width and length; height per the Walls section.
+- Slot width: thick slot i = `thick_device_widths[i] + thick_clearance + 2 * felt_thickness`; thin = `thin_slot_width + 2 * felt_thickness`.
 
 ### Base and ramp (Y)
 - Ramp: Y = 0 to `slope_length` (30), full stand width. Top rises linearly from `ramp_lip_height` (1.0) at the front edge to `base_height` (5.0). Angle 7.6 deg.
@@ -46,12 +51,16 @@ Clearance rationale: tolerance coupon (Bambu PLA Basic, 2026-10-10) gives PLA sl
 
 ### Walls
 - Every wall starts at Y = `slope_length` (front aligned, rear of ramp) and runs rearward for its `<t>_wall_length` (thick 160, thin 120). Rear 15 mm of base (thick) / 55 mm (thin) has no walls.
-- Height above slot floor: full `<t>_wall_height` at wall front, sloping linearly to `wall_rear_height_ratio` x height at wall rear (thick 115 -> 80.5, thin 90 -> 63).
+- Wall height (front): thin walls `thin_wall_height`. Thick walls: each thick slot i has `thick_wall_heights[i]` (115, 103, 91, 91 = about 45% of device height); a thick wall takes the max of its neighboring slots' heights (wall between groups: max of last thick slot and `thin_wall_height`). Default thick walls left to right: 115, 115, 103, 91, 91.
+- Height above slot floor: full wall height at the peak of the front-top corner round (`wall_front_corner_radius` behind the nose), sloping linearly to `wall_rear_height_ratio` x height at wall rear (thick 115 -> 80.5, thin 90 -> 63). (Clarified 2026-10-10: a slope starting at the nose let the corner round cut peak height to 111.4 mm.)
+- Front lead-in (rev 4, user: devices seemed likely to catch on the rounded noses):
+  - Taper (plan view): wall half-width grows linearly from `nose_tip_width` / 2 (1.6 mm tip, fully rounded) at the front edge to wall_width / 2 over `nose_taper_length` (25), measured behind the raked front edge. Taper per side 3.3 deg (thick) / 2.7 deg (thin). Slot opening at the front edge = slot + taper of both neighbors (e.g. 24.50 -> 27.40, 8.80 -> 11.20).
+  - Rake (side view): front edge leans back `nose_rake` (15 deg) from vertical, so the device bottom enters first. Setback at the top: 30.8 mm (115 wall), 24.1 (90 wall).
 - Edge profile (no sharp points anywhere):
-  - Nose (front vertical edge): half-round, r = wall_width / 2.
-  - Top: half-round, r = wall_width / 2, following the slope.
-  - Front-top corner (side view, YZ): round, r = `wall_front_corner_radius` (15).
-  - Root (wall meets slot floor): concave fillet r = `root_fillet_r` (1.5), both sides of dividers; inner side of outer walls.
+  - Front edge: rounded with the local half-width (0.8 mm at the tip).
+  - Top: half-round with the local half-width, following the slope.
+  - Front-top corner (side view, YZ): round, r = `wall_front_corner_radius` (15), tangent to the raked front edge and the sloped top. Must be >= wall_width / 2.
+  - Root (wall meets slot floor): concave fillet r = `root_fillet_r` (1.5), all around each wall incl. tapered nose and rear end, following the rake; outer walls: not on the outer face.
 - Thin slot flat floor between fillets: 8.8 - 2 x 1.5 = 5.8 mm.
 
 ### Optional features
@@ -59,16 +68,17 @@ Clearance rationale: tolerance coupon (Bambu PLA Basic, 2026-10-10) gives PLA sl
 
 ### Derived dimensions (asserted)
 ```
+thick_device_count = len(thick_device_widths); lists must have equal length
 thick_walls  = thick_device_count > 0 ? thick_device_count + 1 : 0
 thin_walls   = thick_device_count > 0 ? thin_device_count : thin_device_count + 1
-total_w = thick_device_count * slot_w(thick) + thin_device_count * slot_w(thin)
+total_w = sum(thick slot widths) + thin_device_count * slot_w(thin)
         + thick_walls * thick_wall_width + thin_walls * thin_wall_width <= 250
 total_l = slope_length + base_length                               <= 250
 total_h = base_height + max(wall heights in use)                   <= 250
-base_height + max_<t>_device_height                                <= shelf_clear_height
-<t>_slot_width > max_<t>_device_width
+pad + base_height + max(all device heights)                        <= shelf_clear_height
+thick_clearance > 0; thin_slot_width > max_thin_device_width
 <t>_wall_length <= base_length
-max_<t>_device_length / 2 - device_front_overhang <= base_length - tip_margin
+device_length / 2 - device_front_overhang <= base_length - tip_margin   (each thick device, thin max)
 device_front_overhang = slope_length
 thick_device_count + thin_device_count >= 1
 ramp_lip_height < base_height
@@ -79,22 +89,21 @@ wall_front_corner_radius <= rear wall height of each type
 ### Reference configurations
 | Config | W | L | H |
 |---|---|---|---|
-| Default: 5 thick + 6 thin, no felt | 122.5 + 52.8 + 27.0 + 24.0 = **226.3** | 205.0 | 120.0 |
-| Max thick only | 8 thick: **236.5** | 205.0 | 120.0 |
+| Default: 4 thick (per-slot) + 6 thin, no felt | 71.42 + 52.8 + 22.5 + 24.0 = **170.72** | 205.0 | 120.0 |
 | Max thin only | 19 thin: **247.2** | 205.0 | 95.0 |
-| 5 thick + max thin | 5 thick + 7 thin: **239.1** | 205.0 | 120.0 |
+| 4 thick (per-slot) + max thin | 4 thick + 12 thin: **247.52** | 205.0 | 120.0 |
 
 Checks at default:
 - Shelf: thick device top = 1.0 (pads) + 5.0 + 257.05 = 263.1, under 336.55 (73 mm spare).
-- Tipping: thick center 181.0 - 30 = 151.0 behind wall front, limit 175 - 15 = 160 (9 mm spare vs margin, 24 mm to base end). Thin 135.1 (24.9 mm spare vs margin).
+- Tipping (limit 175 - 15 = 160 behind wall front): thick 1: 181.0 - 30 = 151.0 (9.0 spare); thick 2: 161.9 - 30 = 131.9 (28.1); thick 3, 4: 152.4 - 30 = 122.4 (37.6); thin: 135.1 (24.9).
 
 ## Parameters (exposed)
 | Name | Default | Range | Unit | Note |
 |---|---|---|---|---|
-| `thick_device_count` | 5 | 0:1:8 | - | |
-| `thick_slot_width` | 24.5 | 10:0.1:40 | mm | 22.86 + 1.64 |
+| `thick_device_widths` | [22.86, 20, 11, 11] | - | mm | measured; one slot each, left to right; [] = thin only |
+| `thick_clearance` | 1.64 | 0.2:0.01:5 | mm | total, added to each thick device width |
+| `thick_wall_heights` | [115, 103, 91, 91] | - | mm | per thick slot, front height above floor |
 | `thick_wall_width` | 4.5 | 2.4:0.1:10 | mm | also wall between groups |
-| `thick_wall_height` | 115 | 20:1:200 | mm | above slot floor, at wall front |
 | `thick_wall_length` | 160 | 20:1:220 | mm | |
 | `thin_device_count` | 6 | 0:1:19 | - | |
 | `thin_slot_width` | 8.8 | 3:0.1:20 | mm | 7.60 + 1.20 |
@@ -112,16 +121,34 @@ Checks at default:
 | `wall_front_corner_radius` | 15 | 0:1:50 | mm | |
 | `bed_chamfer` | 0.4 | 0:0.1:1 | mm | |
 | `wall_rear_height_ratio` | 0.7 | 0.5:0.05:1.0 | - | 1.0 = flat top |
+| `nose_taper_length` | 25 | 0:1:60 | mm | 0 = no taper |
+| `nose_tip_width` | 1.6 | 0.8:0.1:4.5 | mm | >= 2 extrusion widths |
+| `nose_rake` | 15 | 0:1:30 | deg | from vertical, leaning back |
 | `felt_thickness` | 0 | 0:0.1:3 | mm | per side |
-| `max_thick_device_length` / `_height` / `_width` | 361.95 / 257.05 / 22.86 | - | mm | measured; checks only |
+| `thick_device_lengths` | [361.95, 323.85, 304.8, 304.8] | - | mm | checks only |
+| `thick_device_heights` | [257.05, 228.6, 203.2, 203.2] | - | mm | checks only |
 | `max_thin_device_length` / `_height` / `_width` | 330.20 / 209.55 / 7.60 | - | mm | measured; checks only |
 | `shelf_clear_height` | 336.55 | - | mm | measured; checks only |
 | `tip_margin` | 15 | 0:1:50 | mm | assumption |
-| `section`, `section_axis` | false, "x" | x, y | - | debug cut-away |
+| `section`, `section_axis` | false, "y" | x, y | - | debug cut-away; y = XZ cut 40 mm behind wall fronts, x = YZ cut through first divider |
 
-Single printable part: no `part` parameter.
+`part` parameter (added 2026-10-10, user): `stand` (default, the full stand), `test-slice`, `gauge`. See Test pieces.
+Lists with more than 4 entries are not editable in the OpenSCAD Customizer panel; edit them in the file.
 
-REPORT keys: `total_w`, `total_l`, `total_h`, `thick_slot_w`, `thin_slot_w`, `thick_wall_h_front/rear`, `thin_wall_h_front/rear`, `ramp_angle`, `thick_tip_spare`, `thin_tip_spare`, `shelf_spare`, `thin_slot_flat`.
+REPORT keys: `slot_entry_w` (list), `nose`, `total_w`, `total_l`, `total_h`, `thick_slot_w` (list), `thin_slot_w`, `thick_wall_h_front` (list per wall), `thin_wall_h_front/rear`, `thin_wall_h_front/rear`, `ramp_angle`, `thick_tip_spare` (min over thick devices), `thin_tip_spare`, `shelf_spare`, `thin_slot_flat`.
+
+## Test pieces (added 2026-10-10, user)
+Fit tests before the full print. Both use the stand's code, slot widths, clearances, wall widths and edge shapes; only lengths and heights change.
+- `test-slice`: one slot per distinct thick width (widest left: 24.50, 21.64, 12.64) + one thin slot (8.8); 5 walls. Full ramp (30) + `test_base_length` 50 of base; walls `test_wall_length` 40 long, `test_wall_height` 40 high (rear 28). Size 89.58 x 80 x 45. Tests fit, slide-in over ramp/noses/fillets, wall surface. Not tipping (base too short), not lean at full height (lean about 2.3 deg vs 0.8), not base warping. Tipping and shelf assertions are off in test modes.
+- `gauge`: a `gauge_length` 20 mm band cut at `gauge_wall_height` 10 above the floor, starting behind the taper at gauge height (taper + (gauge height + fillet) x tan(rake) + 5 = 33.1 mm behind the wall fronts), so walls are full width. Cut from the test-slice layout with stand-length walls. Size 89.58 x 20 x 15. Slots open at both ends, fillets included. Tests slot widths only. Wall tops are flat cuts (sharp edges), no labels: slot order by width, 24.50 at one end to 8.8 at the other.
+
+| Name | Default | Range | Unit |
+|---|---|---|---|
+| `test_wall_height` | 40 | 20:1:120 | mm |
+| `test_wall_length` | 40 | 20:1:100 | mm |
+| `test_base_length` | 50 | 30:1:120 | mm |
+| `gauge_length` | 20 | 10:1:40 | mm |
+| `gauge_wall_height` | 10 | 5:1:30 | mm |
 
 ## Mounting
 Freestanding on shelf. Anti-slip required: user cuts 1.0 mm silicone pad sheet into strips for the underside (not modeled; stand sits 1.0 mm higher). Placed at the shelf front edge.
@@ -133,18 +160,20 @@ Freestanding on shelf. Anti-slip required: user cuts 1.0 mm silicone pad sheet i
 
 ## Print orientation and supports
 - As used: base on bed, walls vertical. No supports.
-- Default size about 226.3 x 205 x 120 mm (fits 250 bed; 23.7 mm spare in X).
+- Default size about 170.7 x 205 x 120 mm.
 - Slicer notes (for print-notes.md): Arachne wall generator, about 6 wall loops so 4.0/4.5 mm walls print fully solid; 0.20 mm layers; 5 top / 4 bottom; 15% gyroid (base); ironing on top surfaces (slot floors, ramp).
 
 ## Assumptions (things not stated by user)
 1. `tip_margin` = 15 mm.
 2. `ramp_blend_r` = 20 mm.
-3. Root fillet runs along the wall's long sides only (full wall length), not around the nose or rear end.
+3. Root fillet wraps all around each wall's footprint (both sides, nose, rear end); on outer walls the part outside the stand's side face is clipped. (Changed 2026-10-10: square fillet ends at the nose caught sliding devices, see ref/private/issue.png.) Where the ramp bend dips below floor level in front of the nose (<= 0.2 mm), the fillet toe continues as an 18 deg wedge, not a step.
 4. Wall rear end: vertical edge half-round (r = wall_width / 2), same as the nose. Not stated in idea.md.
 5. Front-top corner round is tangent to the vertical nose line and the sloped top line.
 6. Ramp top is flat across X (walls start where the ramp ends; no wall on the ramp).
 7. Datum: footprint centered on XY origin (ramp front at Y = -total_l / 2).
 8. `wall_front_corner_radius` on a thin wall: 15 <= 63 rear height, no conflict at defaults.
+9. Thick wall heights 103 / 91 (about 45% of device heights 228.6 / 203.2, same ratio as the approved 115 for 257.05). Wall lengths stay 160 for all thick walls.
+10. Rake 15 deg: user asked for a rake, value chosen from the proposed 15-20 range (low end keeps more wall at the front-top lean contact).
 
 ## Out of scope
 - Rear stop (rear open by design).
