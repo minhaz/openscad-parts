@@ -62,5 +62,4 @@ Tested on Bambu Lab P1S with 0.20 mm layer height and default flow calibration:
 
 * [Detailed Spec (`spec.md`)](spec.md) - Exact CAD dimensions, assertions, and geometric definitions.
 * [Print Notes (`print-notes.md`)](print-notes.md) - Slicing parameters, bed adhesion, and fit test protocol.
-* [Test Log (`log.md`)](log.md) - Measured calibration data and physical test logs.
 * [Repository Root Guide](../../docs/GUIDE.md) - Toolchain setup and workflow.

@@ -1,5 +1,6 @@
 tests/out/
 designs/*/ref/private/
+log.md
 *.log
 *.tmp
 __pycache__/

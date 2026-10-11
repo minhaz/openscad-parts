@@ -59,7 +59,7 @@ designs/<name>/
   spec.md                 approved spec (source of truth for intent)
   <name>.scad             the model
   print-notes.md          orientation + slicer settings + fit test
-  log.md                  iteration log, print results, decisions
+  log.md                  iteration log, print results, decisions (gitignored)
   ref/                    sketches, photos (committed, public)
   ref/private/            gitignored; anything user does not want public
   out/                    renders, STL, 3MF, summary.json (committed on export; *.log ignored)
@@ -80,7 +80,7 @@ Steps:
 3. Run `openscad --help`. Confirm flags used below exist: `--backend`, `--render`, `--camera`, `--viewall`, `--autocenter`, `--projection`, `--imgsize`, `--colorscheme`, `--export-format`, `--summary`, `--summary-file`. Adapt scripts to what exists. Note differences in `tools/README` comments.
 4. Scaffold layout from section 3. Create `CLAUDE.md` with single line `@AGENTS.md`. Do not create `GEMINI.md`.
 5. `git submodule add https://github.com/BelfrySCAD/BOSL2.git lib/BOSL2`; pin to current HEAD commit; record in `tools/versions.env`.
-6. Write `.gitignore`: `tests/out/`, `designs/*/ref/private/`, `*.log`, `*.tmp`, `__pycache__/`.
+6. Write `.gitignore`: `tests/out/`, `designs/*/ref/private/`, `log.md`, `*.log`, `*.tmp`, `__pycache__/`.
 7. Write `.gitattributes`: `* text=auto eol=lf`, `*.png *.jpg *.jpeg *.stl *.3mf binary`.
 8. Write `LICENSE`: CC BY-NC 4.0 legal code from `https://creativecommons.org/licenses/by-nc/4.0/legalcode.txt`. Note in README that `lib/BOSL2` keeps its own license (BSD-2-Clause).
 9. Write tools (section 8). Write `tests/golden.scad`. Run `tools/selftest.sh`; must pass.
@@ -360,7 +360,7 @@ Then compute effective clearance per fit class = nominal opening - measured key/
 
 - Commit messages: `design(<name>): ...`, `lib: ...`, `tools: ...`, `docs: ...`, `chore: ...`.
 - Commit at: spec approval, each user-approved iteration, export.
-- Never commit `tests/out/` or `ref/private/` or `*.log`.
+- Never commit `tests/out/` or `ref/private/` or `log.md` or `*.log`.
 - Never push unless user asks.
 - Never edit `lib/BOSL2`.
 

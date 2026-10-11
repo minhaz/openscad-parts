@@ -29,7 +29,7 @@ For AI agent design conventions and coding rules, see **[AGENTS.md](AGENTS.md)**
 ## Repository Structure
 
 ```text
-designs/<name>/         Standalone designs (spec.md, CAD code, print-notes.md, log.md)
+designs/<name>/         Standalone designs (spec.md, CAD code, print-notes.md)
 lib/common/             Shared modules (measured tolerances.scad, printing constants)
 lib/BOSL2/              Pinned BOSL2 submodule
 tools/                  Bash toolchain (render.sh, export.sh, check.sh, selftest.sh)

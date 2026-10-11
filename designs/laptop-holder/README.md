@@ -81,6 +81,5 @@ Exposed in OpenSCAD Customizer:
 
 * [Design Spec (`spec.md`)](spec.md) - Formal engineering specification, assertions, and derived geometry.
 * [Print Notes (`print-notes.md`)](print-notes.md) - Slicer profiles and stepped gauge test protocol.
-* [Iteration Log (`log.md`)](log.md) - Design revision history, test prints, and decision records.
 * [Initial Idea & Sizing (`ref/idea.md`)](ref/idea.md) - Device measurements and tipping center calculations.
 * [Repository Root Guide](../../docs/GUIDE.md) - Workflow, setup, and AI pair-programming instructions.
