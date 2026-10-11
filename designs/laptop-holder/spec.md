@@ -169,7 +169,7 @@ Freestanding on shelf. Anti-slip required: user cuts 1.0 mm silicone pad sheet i
 ## Assumptions (things not stated by user)
 1. `tip_margin` = 15 mm.
 2. `ramp_blend_r` = 20 mm.
-3. Root fillet wraps all around each wall's footprint (both sides, nose, rear end); on outer walls the part outside the stand's side face is clipped. (Changed 2026-10-10: square fillet ends at the nose caught sliding devices, see ref/private/issue.png.) Where the ramp bend dips below floor level in front of the nose (<= 0.2 mm), the fillet toe continues as an 18 deg wedge, not a step.
+3. Root fillet wraps all around each wall's footprint (both sides, nose, rear end); on outer walls the part outside the stand's side face is clipped. (Changed 2026-10-10: square fillet ends at the nose caught sliding devices, observed in CAD inspection.) Where the ramp bend dips below floor level in front of the nose (<= 0.2 mm), the fillet toe continues as an 18 deg wedge, not a step.
 4. Wall rear end: vertical edge half-round (r = wall_width / 2), same as the nose. Not stated in idea.md.
 5. Front-top corner round is tangent to the vertical nose line and the sloped top line.
 6. Ramp top is flat across X (walls start where the ramp ends; no wall on the ramp).
