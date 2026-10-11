@@ -6,7 +6,7 @@ include <common/printing.scad>
 
 /* [Part] */
 // stand: the full stand. test-slice: short front section, one slot per distinct width.
-// gauge: flat slot-width gauge cut from the test slice.
+// gauge: stepped slot gauge, one bar per device thickness, slots at gauge_clearances.
 part = "stand"; // [stand, test-slice, gauge]
 
 /* [Thick group] */
@@ -92,10 +92,18 @@ test_wall_height = 40; // [20:1:120]
 test_wall_length = 40; // [20:1:100]
 // Test slice base length behind the ramp (mm)
 test_base_length = 50; // [30:1:120]
-// Gauge length along Y (mm)
+// Gauge clearances to test, total per slot, one slot each (mm)
+gauge_clearances = [0.2, 0.4, 0.6, 0.8, 1.0];
+// Gauge slot length along Y (mm)
 gauge_length = 20; // [10:1:40]
 // Gauge wall height above slot floor (mm)
-gauge_wall_height = 10; // [5:1:30]
+gauge_wall_height = 30; // [5:1:60]
+// Gauge label ledge in front of the slots (mm)
+gauge_ledge = 9; // [6:1:15]
+// Gauge label text size (mm)
+gauge_label_size = 5; // [5:0.5:8]
+// Gauge label engraving depth (mm)
+gauge_label_depth = 0.6; // [0.4:0.1:1.2]
 
 /* [Debug] */
 section = false;    // cut-away view for checking internals
@@ -122,10 +130,18 @@ lay_thick_widths = is_test ? test_widths : thick_device_widths;
 lay_thick_heights = is_test ? [for (d = test_widths) test_wall_height] : thick_wall_heights;
 lay_thin_count = is_test ? min(thin_device_count, 1) : thin_device_count;
 lay_thin_height = is_test ? test_wall_height : thin_wall_height;
-// The gauge needs full-width walls behind the taper, so it is cut from stand-length walls.
-lay_thick_length = is_test && !is_gauge ? test_wall_length : thick_wall_length;
-lay_thin_length = is_test && !is_gauge ? test_wall_length : thin_wall_length;
-lay_base_length = is_test && !is_gauge ? test_base_length : base_length;
+lay_thick_length = is_test ? test_wall_length : thick_wall_length;
+lay_thin_length = is_test ? test_wall_length : thin_wall_length;
+lay_base_length = is_test ? test_base_length : base_length;
+
+// Gauge bars: [device width, wall width], thickest first; slot = device + clearance
+gauge_bars = concat([for (d = test_widths) [d, thick_wall_width]],
+                    thin_device_count > 0 ? [[max_thin_device_width, thin_wall_width]] : []);
+function gauge_bar_w(b) = len(gauge_clearances) * gauge_bars[b][0] + sum(gauge_clearances)
+                        + (len(gauge_clearances) + 1) * gauge_bars[b][1];
+gauge_bar_l = gauge_ledge + gauge_length;
+gauge_gap = 5;
+gauge_total_l = len(gauge_bars) * gauge_bar_l + (len(gauge_bars) - 1) * gauge_gap;
 
 n_thick = len(lay_thick_widths);
 n_thin = lay_thin_count;
@@ -166,8 +182,6 @@ y_wall = y_front + slope_length;  // ramp end = wall fronts = slot floor start
 y_rear = total_l / 2;
 
 device_front_overhang = slope_length;
-// Gauge band start behind the wall fronts: past the taper at gauge height, plus margin
-gauge_y0 = nose_taper_length + (gauge_wall_height + root_fillet_r) * tan(nose_rake) + 5;
 ramp_rise = base_height - ramp_lip_height;
 ramp_angle = atan(ramp_rise / slope_length);
 blend_t = ramp_blend_r * tan(ramp_angle / 2);  // tangent length of ramp bend
@@ -199,8 +213,9 @@ assert(!has_thin || lay_thin_length <= lay_base_length, "thin walls longer than 
 assert(is_test || !has_thick || min(thick_tip_spares) >= 0, "thick device tips: center too far behind base");
 assert(is_test || !has_thin || thin_tip_spare >= 0, "thin device tips: center too far behind base");
 assert(is_test || shelf_spare >= 0, "tallest device does not fit under shelf");
-assert(gauge_y0 + gauge_length <= min(thick_wall_length, thin_wall_length) - max(thick_wall_width, thin_wall_width),
-       "gauge band must lie within the straight part of the walls");
+assert(max([for (b = [0 : len(gauge_bars) - 1]) gauge_bar_w(b)]) <= bed_xy && gauge_total_l <= bed_xy,
+       "gauge layout exceeds bed");
+assert(min(gauge_clearances) > 0, "gauge clearances must be positive");
 assert(nose_tip_width >= 2 * nozzle, "nose tip below minimum feature (2 extrusion widths)");
 assert(nose_tip_width <= min(thick_wall_width, thin_wall_width), "nose tip wider than wall");
 assert(wall_front_corner_radius >= max(thick_wall_width, thin_wall_width) / 2,
@@ -213,8 +228,6 @@ assert(min([for (i = [0 : n_walls - 1])
            wall_l(i) - (sin(nose_rake) * (wall_h(i) - wall_front_corner_radius) + wall_front_corner_radius) / cos(nose_rake)
            - wall_front_corner_radius]) > 0,
        "wall too short for rake + front corner radius")
-assert(gauge_wall_height <= test_wall_height * wall_rear_height_ratio - max(thick_wall_width, thin_wall_width) / 2,
-       "gauge walls must be below the rounded wall tops");
 assert(wall_front_corner_radius <= min(wall_hs) * wall_rear_height_ratio,
        "front corner radius exceeds lowest rear wall height");
 assert(!has_thick || thick_slot_flat > 0, "thick slot fillets overlap");
@@ -224,8 +237,13 @@ assert(base_corner_radius > bed_chamfer || base_corner_radius == 0, "corner radi
 // Spec report values
 echo(str("REPORT part=", part));
 echo(str("REPORT total_w=", total_w));
-echo(str("REPORT total_l=", part == "gauge" ? gauge_length : total_l));
-echo(str("REPORT total_h=", part == "gauge" ? base_height + gauge_wall_height : total_h));
+echo(str("REPORT total_l=", total_l));
+echo(str("REPORT total_h=", total_h));
+if (is_gauge) {
+    echo(str("REPORT gauge_size=", [max([for (b = [0 : len(gauge_bars) - 1]) gauge_bar_w(b)]), gauge_total_l, base_height + gauge_wall_height]));
+    for (b = [0 : len(gauge_bars) - 1])
+        echo(str("REPORT gauge_bar_", b, " device=", gauge_bars[b][0], " slots=", [for (c = gauge_clearances) gauge_bars[b][0] + c]));
+}
 echo(str("REPORT walls=", n_walls, " (thick ", thick_walls, ", thin ", thin_walls, ")"));
 echo(str("REPORT thick_slot_w=", thick_slot_ws));
 echo(str("REPORT thin_slot_w=", thin_slot_w));
@@ -247,16 +265,55 @@ apply_section()
     else if (thick_side == "right") mirror([1, 0, 0]) stand();
     else stand();
 
-// Gauge: band of the test slice from 10 mm behind the wall fronts, cut at
-// gauge_wall_height above the floor and moved to the origin. Slots open at both ends.
+// Gauge: bars laid out along Y (thickest at the back), 5 mm apart. Each bar has
+// one slot per gauge clearance (smallest left), walls and root fillets as on the
+// stand, slots open at both ends, and engraved labels on a front ledge:
+// clearance in tenths of a mm ("2" = 0.2).
 module gauge() {
-    y0 = y_wall + gauge_y0;
-    translate([0, -(y0 + gauge_length / 2), 0])
-        intersection() {
-            stand();
-            translate([0, y0 + gauge_length / 2, (base_height + gauge_wall_height) / 2])
-                cube([total_w + 2, gauge_length, base_height + gauge_wall_height], center=true);
+    for (b = [0 : len(gauge_bars) - 1])
+        translate([0, gauge_total_l / 2 - gauge_bar_l / 2 - b * (gauge_bar_l + gauge_gap), 0])
+            gauge_bar(gauge_bars[b][0], gauge_bars[b][1]);
+}
+
+module gauge_bar(dev_w, w) {
+    n = len(gauge_clearances);
+    slots = [for (c = gauge_clearances) dev_w + c];
+    bw = sum(slots) + (n + 1) * w;
+    // left face of wall k
+    wx = [for (k = [0 : n]) -bw / 2 + k * w + (k > 0 ? sum([for (j = [0 : k - 1]) slots[j]]) : 0)];
+    y_back = gauge_bar_l / 2;
+    rt = min(1, w / 2);   // wall top edge round
+    r = root_fillet_r;
+    difference() {
+        union() {
+            cuboid([bw, gauge_bar_l, base_height], chamfer=bed_chamfer, edges=BOT, anchor=BOT);
+            translate([0, y_back, 0]) rotate([90, 0, 0]) linear_extrude(gauge_length) {
+                for (k = [0 : n]) {
+                    // wall with rounded top edges
+                    hull() {
+                        translate([wx[k], base_height - eps]) square([w, eps]);
+                        translate([wx[k] + rt, base_height + gauge_wall_height - rt]) circle(r=rt, $fn=small_fn(rt));
+                        translate([wx[k] + w - rt, base_height + gauge_wall_height - rt]) circle(r=rt, $fn=small_fn(rt));
+                    }
+                    // root fillets on slot sides
+                    if (r > 0) for (side = [0, 1]) if ((side == 0 && k > 0) || (side == 1 && k < n)) {
+                        xe = side == 0 ? wx[k] : wx[k] + w;
+                        dir = side == 0 ? -1 : 1;
+                        difference() {
+                            translate([min(xe, xe + dir * r) - (dir > 0 ? eps : 0), base_height - eps])
+                                square([r + eps, r + eps]);
+                            translate([xe + dir * r, base_height + r]) circle(r=r);
+                        }
+                    }
+                }
+            }
         }
+        // labels on the ledge, centered under each slot
+        for (i = [0 : n - 1])
+            translate([wx[i] + w + slots[i] / 2, -gauge_bar_l / 2 + gauge_ledge / 2, base_height - gauge_label_depth])
+                linear_extrude(gauge_label_depth + eps)
+                    text(str(round(gauge_clearances[i] * 10)), size=gauge_label_size, halign="center", valign="center");
+    }
 }
 
 // Section view debug wrapper

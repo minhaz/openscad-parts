@@ -1,5 +1,5 @@
 # laptop-holder spec
-Status: APPROVED (2026-10-10), rev 2 (2026-10-10, per-slot thick widths; user chose option 1), rev 3 (2026-10-10, 4 thick devices: one 20 mm device dropped), rev 4 (2026-10-10, nose taper + rake, user)
+Status: APPROVED (2026-10-10), rev 2 (2026-10-10, per-slot thick widths; user chose option 1), rev 3 (2026-10-10, 4 thick devices: one 20 mm device dropped), rev 4 (2026-10-10, nose taper + rake, user), rev 5 (2026-10-10, stepped gauge)
 
 Source: `ref/idea.md` (user, revised 2026-10-10). Numbers below are user-stated or user-measured unless listed under Assumptions.
 
@@ -140,15 +140,18 @@ REPORT keys: `slot_entry_w` (list), `nose`, `total_w`, `total_l`, `total_h`, `th
 ## Test pieces (added 2026-10-10, user)
 Fit tests before the full print. Both use the stand's code, slot widths, clearances, wall widths and edge shapes; only lengths and heights change.
 - `test-slice`: one slot per distinct thick width (widest left: 24.50, 21.64, 12.64) + one thin slot (8.8); 5 walls. Full ramp (30) + `test_base_length` 50 of base; walls `test_wall_length` 40 long, `test_wall_height` 40 high (rear 28). Size 89.58 x 80 x 45. Tests fit, slide-in over ramp/noses/fillets, wall surface. Not tipping (base too short), not lean at full height (lean about 2.3 deg vs 0.8), not base warping. Tipping and shelf assertions are off in test modes.
-- `gauge`: a `gauge_length` 20 mm band cut at `gauge_wall_height` 10 above the floor, starting behind the taper at gauge height (taper + (gauge height + fillet) x tan(rake) + 5 = 33.1 mm behind the wall fronts), so walls are full width. Cut from the test-slice layout with stand-length walls. Size 89.58 x 20 x 15. Slots open at both ends, fillets included. Tests slot widths only. Wall tops are flat cuts (sharp edges), no labels: slot order by width, 24.50 at one end to 8.8 at the other.
+- `gauge` (rev 5, stepped; user: all test-print slots felt wiggly): 4 separate bars on one plate, one per device thickness (22.86, 20, 11, 7.6), thickest at the back, 5 mm apart. Each bar: 5 slots at device + `gauge_clearances` [0.2, 0.4, 0.6, 0.8, 1.0], smallest left; stand wall widths (4.5 thick / 4.0 thin) and 1.5 root fillets; walls `gauge_wall_height` 30 above a 5 mm floor (taller than the old 10 so tilt in the slot is closer to the stand's), tops rounded r 1; slots `gauge_length` 20, open at both ends; 9 mm front ledge with engraved labels = clearance in tenths (5 mm text, 0.6 deep). Layout 144.3 x 131 x 35. Bars are separate because a 300+ mm device standing in one bar would cross the others.
 
 | Name | Default | Range | Unit |
 |---|---|---|---|
 | `test_wall_height` | 40 | 20:1:120 | mm |
 | `test_wall_length` | 40 | 20:1:100 | mm |
 | `test_base_length` | 50 | 30:1:120 | mm |
+| `gauge_clearances` | [0.2, 0.4, 0.6, 0.8, 1.0] | - | mm |
 | `gauge_length` | 20 | 10:1:40 | mm |
-| `gauge_wall_height` | 10 | 5:1:30 | mm |
+| `gauge_wall_height` | 30 | 5:1:60 | mm |
+| `gauge_ledge` | 9 | 6:1:15 | mm |
+| `gauge_label_size` / `_depth` | 5 / 0.6 | - | mm |
 
 ## Mounting
 Freestanding on shelf. Anti-slip required: user cuts 1.0 mm silicone pad sheet into strips for the underside (not modeled; stand sits 1.0 mm higher). Placed at the shelf front edge.

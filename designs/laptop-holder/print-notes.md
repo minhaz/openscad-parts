@@ -1,32 +1,33 @@
 # laptop-holder print notes
 
-## Test pieces (print first: gauge, then test slice)
+## Test pieces
 
-Parts: `out/laptop-holder-gauge.3mf` x1, `out/laptop-holder-test-slice.3mf` x1 (STL alongside)
-Material: PLA, Bambu PLA Basic (calibrated filament; same as the final stand)
-Orientation: as modeled, base on bed (Z=0), walls vertical
-Supports: none
-Layer height: 0.20 mm
-Walls: 6 loops, Wall generator = Arachne (4.0 / 4.5 mm walls print fully solid, no gap fill)   Top/bottom: 5 / 4 layers   Infill: 15% gyroid
-Brim: none
-Special: ironing on top surfaces (slot floors, ramp) for smoother sliding. Same settings planned for the full stand, so the test is representative.
+### Stepped gauge (print first)
+Parts: `out/laptop-holder-gauge.3mf` (4 bars, one plate, 144.3 x 131 x 35 mm)
+Material: PLA, Bambu PLA Basic (same as the final stand)
+Orientation: as modeled, floor on bed, walls vertical. Supports: none
+Layer height: 0.20 mm   Walls: 6 loops, Arachne   Top/bottom: 5 / 4   Infill: 15% gyroid   Brim: none
 
-Sizes: gauge 89.6 x 20 x 15 mm; test slice 89.6 x 80 x 45 mm.
+Bars (back to front): 22.86 mm device, 20 mm, 11 mm, thin 7.6 mm.
+Slots left to right, label = clearance in tenths of a mm:
+| Bar | "2" | "4" | "6" | "8" | "10" |
+|---|---|---|---|---|---|
+| 22.86 | 23.06 | 23.26 | 23.46 | 23.66 | 23.86 |
+| 20 | 20.20 | 20.40 | 20.60 | 20.80 | 21.00 |
+| 11 | 11.20 | 11.40 | 11.60 | 11.80 | 12.00 |
+| 7.6 | 7.80 | 8.00 | 8.20 | 8.40 | 8.60 |
 
-### Fit test
-Slot widths (nominal): 24.50 (23 mm device), 21.64 (20 mm devices), 12.64 (11 mm devices), 8.80 (thin devices).
-The gauge has no labels: the widest slot (24.50) is at one end, the narrowest (8.80) at the other.
+Fit test:
+1. Measure each slot width with calipers near the top of the walls (optional, a few slots is enough; tells whether slots print at nominal).
+2. Stand each device on its edge in each slot of its bar (drop in from above, then slide it along the 20 mm slot). Rate each: binds / snug / good / wiggly.
+3. Report the table back. I'll pick the clearance per device: the tightest slot that rated "good", plus a margin of one step (0.2) unless it felt clearly loose-free, because the stand slots are 120-160 mm long and its walls 90-115 mm tall (more room for print waviness than a 20 mm gauge).
 
-1. Gauge (fit only):
-   - Measure each slot width with calipers at the top of the walls (gauge cut is 10 mm tall). Report 4 values.
-   - Stand each device on its edge in its slot (drop in from above). Rate each: binds / snug / good slide / loose. Target: slides in by hand without force, small visible gap.
-2. Test slice (entry + slide; walls taper to a 1.6 mm rounded front edge and lean back 15 deg):
-   - Ramp faces you. Slots left to right: 24.50, 21.64, 12.64, 8.80.
-   - Slide each device in from the front, up the ramp, as in daily use. Try it slightly off-center and slightly tilted too. Report: does it catch anywhere (ramp, wall front edges, fillets at the wall base)? Any ridge felt at the fillet toe in front of the walls?
-   - Check the 1.6 mm front edges: printed cleanly, no stringing or blobs, stiff enough when pushed sideways by hand?
-   - Feel the wall faces and tops: any rough seams, zits or blobs where a device rubs?
-   - Note: devices lean about 2.3 deg here (walls only 40 mm high); the full stand leans about 0.8 deg. Judge fit, not lean.
-3. Report back: 4 gauge widths, per-slot fit rating, any catch points (where), surface issues.
+### Test slice (after the gauge; reprint with the chosen clearances)
+Parts: `out/laptop-holder-test-slice.3mf` x1 (89.6 x 80 x 45 mm). Same settings as the gauge.
+- Ramp faces you. Slots left to right: 24.50, 21.64, 12.64, 8.80 (current spec; will change after the gauge result).
+- Slide each device in from the front, up the ramp, as in daily use, also slightly off-center and tilted. Report any catch point (ramp, wall front edges, fillets) and any ridge at the fillet toe.
+- Check the 1.6 mm wall front edges: clean print, no blobs, stiff enough when pushed sideways by hand?
+- Devices lean more here (walls only 40 mm high). Judge fit, not lean.
 
 ## Full stand
 To be written after the model is approved for export.
