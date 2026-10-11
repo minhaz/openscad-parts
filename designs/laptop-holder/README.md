@@ -2,7 +2,13 @@
 
 A parametric shelf organizer that holds laptops and tablets upright on their long edges. Designed for FDM printing on Bambu Lab P1S ($256 \times 256 \times 256\text{ mm}$).
 
-![Laptop Holder Stand](out/laptop-holder_iso.png)
+---
+
+## From Concept to Physical Print
+
+| 1. Concept Sketch | 2. Parametric CAD Model | 3. Physical Print Output |
+|:---:|:---:|:---:|
+| ![Concept Sketch](ref/sketch.jpg) | ![CAD Model](out/laptop-holder_iso.png) | ![Physical Print](ref/print.jpg) |
 
 ---
 
