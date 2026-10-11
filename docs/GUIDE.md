@@ -1,201 +1,222 @@
-# OpenSCAD + AI agent workflow: personal guide
+# OpenSCAD + AI Agent Workflow Guide
 
 Location in repo: `docs/GUIDE.md`. Agent instructions: `AGENTS.md` (repo root).
 
-## 1. Overview
+---
 
-Pipeline:
-1. You: requirements, caliper measurements, sketch photos.
-2. Agent: interviews you, writes `spec.md`. You approve.
-3. Agent: writes `.scad`, renders PNGs from 6 angles + section view, checks dimensions and warnings, fixes obvious problems.
-4. You: inspect in OpenSCAD GUI (auto-reloads on each agent save). Give feedback. Repeat.
-5. Agent: exports STL + 3MF, writes `print-notes.md`.
-6. You: slice in Bambu Studio, print, test fit, report results.
-7. Agent: adjusts clearances, logs results. Systematic corrections go into shared `tolerances.scad`.
+## 1. Overview & Architecture
 
-Stack:
+This repository is a reusable library of parametric OpenSCAD designs for functional FDM 3D printing. It is designed to work interactively with AI coding assistants (such as Antigravity or Claude Code).
 
-| Component | Where | Role |
+### The Pipeline
+1. **You**: Define requirements, measure real-world objects with calipers, provide sketches/photos.
+2. **Agent**: Interviews you, drafts `spec.md`, and requests approval.
+3. **Agent**: Writes parametric OpenSCAD (`.scad`), renders multi-angle PNG views + section cuts, and checks dimensions/warnings.
+4. **You**: Inspect model live in the Windows OpenSCAD GUI (which auto-reloads on every save). Give feedback.
+5. **Agent**: Exports final binary STL + 3MF, and drafts `print-notes.md`.
+6. **You**: Slice in Bambu Studio, print, test physical fit, and report back.
+7. **Agent**: Adjusts clearances, logs results, and updates shared libraries in `lib/common/`.
+
+### Architecture: Dual Windows + WSL Setup
+
+| Component | Environment | Role |
 |---|---|---|
-| WSL2 `Ubuntu` | Windows 11 | Repo, agents, headless OpenSCAD |
-| OpenSCAD dev snapshot (AppImage) | WSL | Agent renders/exports |
-| OpenSCAD dev snapshot (installer) | Windows | Your viewer, auto-reload |
-| BOSL2 | `lib/BOSL2` git submodule | Rounding, chamfers, attachments, threads |
-| Claude Code / Antigravity | WSL / Antigravity IDE | Agents; both read `AGENTS.md` |
-| GitHub + `gh` CLI | WSL | Public repo |
-| Bambu Studio | Windows | Slicing |
+| **WSL2 (`Ubuntu`)** | Windows 11 | Hosts repository, runs AI agents, bash toolchain, headless OpenSCAD rendering |
+| **OpenSCAD dev snapshot** | WSL | Headless multi-angle PNG rendering and STL/3MF export using Manifold backend |
+| **OpenSCAD dev snapshot** | Windows | Visual GUI viewer with Automatic Reload and Customizer panel |
+| **BOSL2** | `lib/BOSL2` submodule | Library for rounded primitives, attachments, chamfers, and threads |
+| **AI Agents** | WSL / IDE | Pair programming (Claude Code / Antigravity) reading `AGENTS.md` |
+| **Bambu Studio** | Windows | Slicing and sending prints to printer |
 
-## 4. First agent session: setup
+> **Why development snapshots?** OpenSCAD development snapshots include the **Manifold** geometry engine (orders of magnitude faster renders), headless PNG rendering, and full BOSL2 compatibility.
 
-Start agent in repo root (`<repo-path>`, WSL shell). Prompt:
+---
+
+## 2. Setup & Installation (One-Time)
+
+Follow these steps when cloning or setting up this repository on a new machine.
+
+### Step 1: Clone the Repository with Submodules
+Clone the repo and its submodules (including `lib/BOSL2`):
+```bash
+git clone --recurse-submodules <repo-url>
+cd openscad-parts
 ```
-Read AGENTS.md. Do first-run setup (section 4). Report missing prerequisites before installing anything.
+*If you already cloned without `--recurse-submodules`, initialize them with:*
+```bash
+git submodule update --init --recursive
 ```
-Expected result:
-- OpenSCAD snapshot installed in WSL, date reported. Install matching Windows snapshot (2.7).
-- `lib/BOSL2` submodule, `lib/common/`, `tools/`, `tests/golden.scad`, `.gitignore`, `.gitattributes`, `LICENSE`.
-- `tools/selftest.sh` passes.
-- Local commit `chore: initial scaffold`.
 
-Then: open `tests/golden.scad` in Windows OpenSCAD (2.7 step 5). Then `git push`.
-
-## 5. Second session: tolerance coupon
-
-Purpose: replace guessed clearances with measured ones. Do once per material (PLA, PETG). Redo when switching filament brand or after major printer changes.
-
-Prompt:
-```
-Read AGENTS.md. Start project 1: tolerance coupon (section 12).
-```
-Then:
-1. Approve spec. Review renders. Agent exports + writes print notes.
-2. Print all 4 parts in PLA, same settings as normal functional prints.
-3. Measure key thickness at 3 points; record max. Same for pin diameter.
-4. Insert key into each slot, pin into each hole. Classify each:
-   - press: needs real force, stays
-   - snug: friction hold, removable by hand
-   - slide: moves freely, little play
-   - free: loose
-   - no fit
-5. Report to agent as a table:
+### Step 2: Configure WSL & Install Packages
+1. **WSL Mount Permissions**: To ensure bash scripts in the repository have execution permissions and git filemodes remain stable across the Windows drive, ensure `/etc/wsl.conf` has the metadata option:
+   ```bash
+   cat /etc/wsl.conf
    ```
-   Material: PLA, <brand>
-   key measured 4.03, pin measured 7.98
-   slot 0: no fit, 1: press, 2: snug, 3: snug, 4: slide, 5: free, 6: free
-   hole 0: no fit, 1: no fit, 2: press, 3: snug, 4: slide, 5: slide, 6: free
+   If there is no `[automount]` section, append:
+   ```ini
+   [automount]
+   options = "metadata,umask=22,fmask=11"
    ```
-6. Agent proposes `tolerances.scad` values. Approve. Repeat for PETG.
+   If you modified `/etc/wsl.conf`, restart WSL from PowerShell with `wsl --shutdown`, then reopen WSL.
 
-## 6. Running a design session
+2. **Install Required Packages**:
+   In WSL:
+   ```bash
+   sudo apt update
+   sudo apt install -y git python3 xvfb curl
+   ```
 
-### 6.1 Before
-- Sketch on paper. Mark known dimensions. Photograph straight-on, good light.
-- Measure real objects with calipers. Each dimension at 3 points, use max. Note where measured (e.g. "tablet thickness at edge, excluding camera bump").
-- Note: what it holds, what it mounts to, how it mounts, which material.
+### Step 3: Install OpenSCAD Dev Snapshot in WSL (Headless Toolchain)
+Download and extract the matching development snapshot AppImage in WSL (matches snapshot date in `tools/versions.env`, e.g., `2026.10.05`):
+```bash
+mkdir -p ~/opt/openscad ~/.local/bin
+cd ~/opt/openscad
 
-### 6.2 Start
+# Download matching snapshot from https://files.openscad.org/snapshots/
+# (Replace <SNAPSHOT-DATE> with date from tools/versions.env, e.g. 2026.10.05)
+curl -fLO https://files.openscad.org/snapshots/OpenSCAD-<SNAPSHOT-DATE>-x86_64.AppImage
+chmod +x OpenSCAD-*.AppImage
+./OpenSCAD-*.AppImage --appimage-extract
+ln -sf ~/opt/openscad/squashfs-root/AppRun ~/.local/bin/openscad
 ```
-./tools/new-design.sh tablet-stand          # or let the agent run it
-```
-Put photos in `designs/tablet-stand/ref/` (or `ref/private/`).
-Prompt:
-```
-Read AGENTS.md. New design: tablet-stand. Sketch and notes in designs/tablet-stand/ref/. Interview me.
+Verify the installation:
+```bash
+openscad --version
 ```
 
-### 6.3 Interview and spec
-- Answer the agent's batches of questions. Accept or override its proposed defaults.
-- Read `spec.md` fully. Check: every real-object dimension is one you measured; fit classes are right; Assumptions section has nothing wrong.
-- Approve explicitly: "Spec approved."
+### Step 4: Install OpenSCAD on Windows (Visual Viewer)
+1. **Install GUI**: Download the Windows 64-bit development snapshot installer from [openscad.org/downloads.html](https://openscad.org/downloads.html) (choose the date closest to the WSL snapshot).
+2. **Set Windows Library Path**: In Windows PowerShell, configure `OPENSCADPATH` so Windows OpenSCAD resolves BOSL2 and `lib/common/`:
+   ```powershell
+   [Environment]::SetEnvironmentVariable("OPENSCADPATH", "<windows-repo-path>\lib", "User")
+   ```
+   *(Replace `<windows-repo-path>` with the absolute Windows path to the repo, e.g., `C:\path\to\openscad-parts`).*
+   Restart OpenSCAD and your terminals to pick up the new variable.
+3. **Configure Windows OpenSCAD GUI**:
+   - Check **Design > Automatic Reload and Preview** (OpenSCAD will automatically re-render the view whenever the AI agent edits and saves a file).
+   - Open **Preferences > Advanced > 3D View**, set backend to **Manifold**.
+   - Open **Window > Customizer** to view and test exposed model parameters.
 
-### 6.4 Iterate
-- Keep `<name>.scad` open in Windows OpenSCAD. It refreshes on each agent save.
-- Use the Customizer panel to try parameter values without editing code. Customizer changes are not saved to the file; tell the agent the values you want as defaults.
-- Feedback that works well:
-  - Reference views by name: iso, back-iso, front, right, top, bottom, section.
-  - Give numbers: "front lip 3 mm taller", "corner radius 2 mm".
-  - Point to locations by feature: "the left mounting tab", "slot floor".
-- Agent's update after each iteration lists: change, check result, REPORT values vs spec, unverified items. Read the unverified items.
-- Approve iteration explicitly ("approved") so it commits.
+### Step 5: Verify the Toolchain
+1. **WSL Self-Test**: Run the test script in WSL:
+   ```bash
+   bash tools/selftest.sh
+   ```
+   This tests headless rendering, BOSL2 imports, and bounding box validation against `tests/golden.scad`. It should report `selftest.sh PASSED`.
+2. **Windows GUI Test**: Open `<windows-repo-path>\tests\golden.scad` in Windows OpenSCAD. It should render a 30 x 20 x 10 mm rounded box without errors.
 
-### 6.5 Export and print
-- "Export." Agent writes STL/3MF to `designs/<name>/out/` and `print-notes.md`.
-- Open `<repo-path>\designs\<name>\out\` in Explorer; drag files into Bambu Studio. Slice per section 7.
+### Step 6: Configure Your AI Coding Agent
+Run your agent in WSL within the repository root:
+- **Claude Code**: Run `claude` from the repository root in WSL. It automatically reads `CLAUDE.md` and imports `AGENTS.md`.
+- **Antigravity**: Open the repository folder in WSL mode. Antigravity automatically reads `AGENTS.md`.
 
-### 6.6 After print
-Report fit and problems:
+---
+
+## 3. Tolerance Calibration (`designs/tolerance-coupon`)
+
+Before modeling tight-tolerance parts, measure your printer's real clearances for each filament brand and material (PLA / PETG).
+
+1. In your agent session:
+   ```text
+   Read AGENTS.md. Start project 1: tolerance coupon (section 12).
+   ```
+2. The agent verifies or generates `designs/tolerance-coupon/tolerance-coupon.scad`.
+3. Print all 4 parts (`key`, `slot-block`, `pin`, `hole-plate`) in Bambu Studio using standard settings (0.20 mm layer height, 3 wall loops).
+4. Measure with digital calipers:
+   - Printed `key` thickness at 3 points (record max).
+   - Printed `pin` diameter at 3 points (record max).
+5. Test fits into each numbered slot ("0" to "6") and hole ("0" to "6"), and rate each: `press`, `snug`, `slide`, `free`, or `does-not-fit`.
+6. Report the results to the agent. The agent updates `lib/common/tolerances.scad` with measured clearance values.
+
+---
+
+## 4. Running a Design Session
+
+### 4.1 Preparation
+- Sketch the part on paper. Note critical functional dimensions.
+- Measure physical mating objects with digital calipers (measure at 3 points, take max).
+- Put photos or sketches in `designs/<name>/ref/` (or `designs/<name>/ref/private/` for photos you wish to keep gitignored).
+
+### 4.2 Start
+Scaffold the design directory:
+```bash
+./tools/new-design.sh <name>
 ```
-Printed in PETG. Tablet fits but too tight, needs force. Base wobbles on left side.
+Start your agent session:
+```text
+Read AGENTS.md. New design: <name>. Refs in designs/<name>/ref/. Interview me.
 ```
-Agent adjusts, logs in `log.md`, re-exports. Systematic fit corrections get proposed for `tolerances.scad`.
 
-### 6.7 Prompt cheat sheet
+### 4.3 Interview & Spec
+- Answer the agent's questions (wall thickness, clearances, mounting methods, print constraints).
+- Review `designs/<name>/spec.md`. Ensure dimensions, fit classes, and assumptions match your intent.
+- Approve the spec explicitly ("Spec approved").
 
-| Goal | Prompt |
-|---|---|
-| Setup | `Read AGENTS.md. Do first-run setup.` |
-| New design | `Read AGENTS.md. New design: <name>. Refs in designs/<name>/ref/. Interview me.` |
-| Resume | `Read AGENTS.md. Resume designs/<name>. Read spec.md and log.md, summarize state.` |
-| Variant | `Add parameter <x> to <name> so I can make a <variant>. Update spec first.` |
-| New shared module | `<name> and <other> both need <feature>. Propose a lib/common module.` |
-| Push | `Push to GitHub.` |
+### 4.4 Build & Iterate
+- Keep `<windows-repo-path>\designs\<name>\<name>.scad` open in Windows OpenSCAD.
+- Every time the agent updates the code, OpenSCAD automatically reloads and renders.
+- Give concise feedback referring to views by name (`iso`, `front`, `top`, `section`) and specify dimension adjustments.
+- Approve iterations explicitly once satisfied.
 
-### 6.8 Comparing Claude Code and Antigravity
-Both read the same `AGENTS.md`. For a fair comparison use the same approved `spec.md` and the same refs. Work on separate branches (`git switch -c try-claude`, `git switch -c try-antigravity`) so outputs do not collide.
+### 4.5 Export & Slicing
+- Prompt: `Export.`
+- The agent exports STLs and 3MFs to `designs/<name>/out/` and generates `print-notes.md`.
+- Open `<windows-repo-path>\designs\<name>\out\` in Explorer and drag the 3MF/STL files into Bambu Studio.
 
-## 7. Bambu Studio slicing pointers
+---
 
-### 7.1 Import
-- Drag STL or 3MF onto the plate. For OpenSCAD 3MF, if asked, load geometry only.
-- Units are mm; if the part appears tiny or huge, unit detection went wrong; re-import STL.
-- Multiple parts from `print` layout arrive as one object; right-click > Split to objects if you want per-part settings.
+## 5. Bambu Studio Slicing Guidelines
 
-### 7.2 Orientation
-- Models arrive in print orientation (bed face at Z=0). Keep it unless print notes say otherwise.
-- If needed: Lay on face tool, click the face that should touch the bed.
-- Strength: layers separate most easily when pulled apart in Z. For brackets, orient so the load does not peel layers. Print notes state this.
+### Import & Layout
+- Drag `.3mf` or `.stl` onto the plate. If prompted, load geometry only.
+- Parts are modeled in their intended print orientation (bed face at $Z=0$).
+- If multiple parts are in a `print` layout, right-click $\rightarrow$ **Split to objects** for per-part positioning.
 
-### 7.3 Plate and filament
-- Select the plate type you actually have (Textured PEI common). Wrong plate = wrong bed temp.
-- Filament: pick the matching Bambu or generic profile (PLA Basic / PETG HF / Generic PETG). Use your own calibrated profile if you have one.
-- PETG on smooth PEI: use glue stick as release agent (PETG can bond too strongly). Textured PEI usually fine without.
+### Process Settings for Functional Parts (0.4 mm Nozzle)
+Start with the standard **0.20 mm Standard** profile:
 
-### 7.4 Process settings for functional parts
-Start from the 0.20 mm Standard profile, then:
-
-| Setting | Location (Process tab) | Value |
+| Setting | Location (Process tab) | Recommended Value |
 |---|---|---|
-| Wall loops | Strength > Walls | 3 (4 for loaded brackets) |
-| Top / bottom shell layers | Strength > Top/bottom shells | 5 / 4 |
-| Sparse infill density | Strength > Infill | 15-25% |
-| Sparse infill pattern | Strength > Infill | Gyroid or grid |
-| Supports | Support | Off unless print notes say otherwise |
-| Brim | Others > Bed adhesion | Off; on (5 mm) for small footprints or tall thin parts, often for PETG |
-| Elephant foot compensation | Quality > Precision | Leave default; adjust if bottom layers flare into fits |
-| X-Y hole compensation | Quality > Precision | 0; clearance lives in the model, not the slicer |
+| Wall generator | Quality > Walls | **Arachne** (handles thin walls cleanly) |
+| Wall loops | Strength > Walls | **3** (or **4** for structural brackets) |
+| Top / bottom shell layers | Strength > Top/bottom shells | **5 top / 4 bottom** |
+| Sparse infill density | Strength > Infill | **15–25%** |
+| Sparse infill pattern | Strength > Infill | **Gyroid** |
+| Supports | Support | **Off** (parts are designed to print support-free) |
+| Brim | Others > Bed adhesion | **Off** (turn on 5 mm only for tall/narrow parts) |
+| Elephant foot compensation | Quality > Precision | Default (~0.15 mm) |
+| X-Y hole compensation | Quality > Precision | **0** (tolerances are built into CAD models) |
 
-Keep slicer settings consistent with the settings used for the tolerance coupon. Changing walls, flow, or compensation changes fits.
+---
 
-### 7.5 Supports (when unavoidable)
-- Type: Tree (auto). "On build plate only" when internal supports would be hard to remove.
-- Better fix: ask the agent to redesign (chamfer the overhang, split the part, change orientation).
+## 6. Maintenance & Updates
 
-### 7.6 Check before print
-- Preview tab: scrub the layer slider through slots, holes, overhangs. Look for missing walls, unsupported islands, bridging over long spans.
-- Check estimated time and filament.
-- Save the Bambu project (`.3mf`) next to the design's `out/` files if you want to reprint with the same settings (gitignored location: copy elsewhere if you want it versioned).
+- **Upgrading OpenSCAD snapshot or BOSL2**: Upgrade deliberately between projects.
+  Prompt: `Upgrade OpenSCAD snapshot and BOSL2 to latest. Run selftest and re-check all designs. Report diffs.`
+  Then install the matching snapshot on Windows.
+- **Filament calibration**: Re-run the tolerance coupon whenever switching filament brands, nozzle sizes, or slicer flow profiles.
 
-## 8. Maintenance
+---
 
-- Update OpenSCAD and BOSL2 together, deliberately, not mid-project. Prompt: `Upgrade OpenSCAD snapshot and BOSL2 to latest. Run selftest and re-check all designs. Report diffs.` Then install matching Windows snapshot.
-- Re-run the tolerance coupon after: new filament brand, nozzle change, major firmware/slicer profile changes.
-- Periodically: `git push`; review `lib/common/` for modules worth documenting in README.
+## 7. Troubleshooting
 
-## 9. Troubleshooting
-
-| Symptom | Likely cause | Fix |
+| Symptom | Likely Cause | Solution |
 |---|---|---|
-| `Can't open include file BOSL2/std.scad` (Windows GUI) | OPENSCADPATH wrong or OpenSCAD not restarted | Check path in Explorer, restart OpenSCAD |
-| Same error in WSL | `tools/env.sh` not sourced | Run via `tools/*.sh`, not raw `openscad` |
-| GUI does not refresh | Auto-reload off | Enable Design > Automatic Reload and Preview; F5 |
-| `Permission denied` running `tools/*.sh` | `/mnt/c` mounted without `metadata`, or exec bit lost | Fix `/etc/wsl.conf` (2.1), `wsl --shutdown`; meanwhile `bash tools/<script>.sh` |
-| `git status` shows every file modified | File mode or line-ending noise on `/mnt/c` | Confirm `metadata` mount and `core.autocrlf input`; if mode-only: `git config core.fileMode false` |
-| Agent runs PowerShell commands / cannot find `openscad` | Antigravity opened folder in Windows mode | Reopen in WSL mode (2.5) |
-| Git conflicts or corrupt `.git` | OneDrive syncing the repo | Exclude folder from OneDrive (2.1) |
-| Slow `git status` / agent file ops | `/mnt/c` I/O overhead | Expected; acceptable. If painful, move repo to `~/` and point Windows paths at `\\wsl.localhost\Ubuntu\...` |
-| PNG export fails in WSL (GL/display error) | No GL context | `render.sh` retries with `xvfb-run -a`; check `xvfb` installed |
-| Render very slow | Not using Manifold, or heavy minkowski/high `$fn` | Check backend; ask agent to simplify |
-| Renders differ between GUI and agent | Different snapshot dates | Install matching versions |
-| Part fits too tight everywhere | Clearances provisional or filament changed | Run/redo tolerance coupon |
-| Bottom edge of slot too tight | Elephant foot | Agent adds bed-face chamfer at slot entry |
-| Agent invents BOSL2 functions | Did not check source | Remind: "grep lib/BOSL2 before using unfamiliar functions (AGENTS.md 6.2)" |
-| Agent skips steps | Long session context drift | New session: `Read AGENTS.md. Resume designs/<name>.` |
-| `gh` push asks for password | Credential helper not set | `gh auth setup-git` |
-| Submodule folder empty after clone | Cloned without submodules | `git submodule update --init` |
+| `Can't open include file BOSL2/std.scad` in Windows GUI | `OPENSCADPATH` not set or OpenSCAD not restarted | Check path in Windows environment variables (Step 4), restart OpenSCAD |
+| Same error in WSL bash | `tools/env.sh` not sourced | Run scripts via `tools/*.sh` rather than raw `openscad` |
+| Windows GUI does not auto-reload | Auto-reload option disabled | Enable **Design > Automatic Reload and Preview**; press `F5` |
+| `Permission denied` running `tools/*.sh` in WSL | Windows mount lacking `metadata` option | Check `/etc/wsl.conf` (Step 2), restart with `wsl --shutdown`; or run `bash tools/<script>.sh` |
+| `git status` shows file permission changes | File mode noise on `/mnt/c` | Confirm `metadata` in `/etc/wsl.conf`; run `git config core.fileMode false` if needed |
+| Agent runs PowerShell or cannot find `openscad` | IDE opened repository in Windows mode | Reopen repository in WSL mode so commands run in Linux bash |
+| PNG export fails in WSL with GL/display error | Missing headless X11 display | `render.sh` automatically retries with `xvfb-run -a`; ensure `xvfb` is installed (`sudo apt install xvfb`) |
+| Render is very slow | OpenSCAD not using Manifold backend | Ensure `--backend=manifold` is active; check for heavy `minkowski()` or excessive `$fn` |
+| Submodule folder `lib/BOSL2` is empty | Cloned without submodules | Run `git submodule update --init --recursive` |
+| Part fits too tight or too loose | Printer/filament characteristics differ from defaults | Run `tolerance-coupon` to empirically measure clearances for your filament |
 
-## 10. Later: publishing (P4)
+---
 
-- MakerWorld Parametric Model Maker: single `.scad` file only; your own includes do not load; MakerWorld-hosted libraries (BOSL2) do; generation times out around 10 s.
-- Plan: agent writes `tools/bundle.py` to inline `lib/common` into one file. Ask when needed.
-- Printables: upload STL/3MF + `.scad`; no single-file constraint.
-- License on both: CC BY-NC 4.0, matching repo.
+## 8. Publishing Models
+
+- **MakerWorld (Parametric Model Maker)**: Requires a single self-contained `.scad` file; local includes cannot be resolved, but MakerWorld supports BOSL2. Future bundling scripts can inline `lib/common/` while preserving BOSL2 includes.
+- **Printables**: Upload STL/3MF files alongside `.scad`; multi-file projects can be zipped.
+- **Licensing**: Models and original code in this repository are licensed under [CC BY-NC 4.0](../LICENSE). BOSL2 maintains its own BSD-2-Clause license.
