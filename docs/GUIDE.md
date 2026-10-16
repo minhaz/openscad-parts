@@ -114,34 +114,31 @@ Run your agent in WSL within the repository root:
 
 ## 3. Tolerance Calibration (`designs/tolerance-coupon`)
 
-Before modeling tight-tolerance parts, measure your printer's real clearances for each filament brand and material (PLA / PETG).
+Before modeling tight-tolerance parts with a new filament brand, material (PLA / PETG), or nozzle size, measure your printer's real clearances using `designs/tolerance-coupon`:
 
-1. In your agent session:
-   ```text
-   Read AGENTS.md. Start project 1: tolerance coupon (section 12).
-   ```
-2. The agent verifies or generates `designs/tolerance-coupon/tolerance-coupon.scad`.
-3. Print all 4 parts (`key`, `slot-block`, `pin`, `hole-plate`) in Bambu Studio using standard settings (0.20 mm layer height, 3 wall loops).
-4. Measure with digital calipers:
+1. Export or open `designs/tolerance-coupon/out/tolerance-coupon-print.3mf` (or ask the agent: `Read AGENTS.md. Calibrate tolerances using designs/tolerance-coupon (section 12).`).
+2. Print all 4 parts (`key`, `slot-block`, `pin`, `hole-plate`) in Bambu Studio using standard settings (0.20 mm layer height, 3 wall loops).
+3. Measure with digital calipers:
    - Printed `key` thickness at 3 points (record max).
    - Printed `pin` diameter at 3 points (record max).
-5. Test fits into each numbered slot ("0" to "6") and hole ("0" to "6"), and rate each: `press`, `snug`, `slide`, `free`, or `does-not-fit`.
-6. Report the results to the agent. The agent updates `lib/common/tolerances.scad` with measured clearance values.
+4. Test fits into each numbered slot ("0" to "6") and hole ("0" to "6"), and rate each: `press`, `snug`, `slide`, `free`, or `does-not-fit`.
+5. Report the results to the agent. The agent logs the results in `designs/tolerance-coupon/log.md` and updates `lib/common/tolerances.scad` with measured clearance values.
+
+> **Note on fit geometry**: `tolerances.scad` measures short, rigid vertical holes and slots. For designs with long sliding slots, tall walls where part tilt can bind, or entry over fillets/ramps, use a design-specific `gauge` or `test-slice` (see Section 4.4) to dial in clearance before printing the full part.
 
 ---
 
 ## 4. Running a Design Session
 
-### 4.1 Preparation
-- Sketch the part on paper. Note critical functional dimensions.
-- Measure physical mating objects with digital calipers (measure at 3 points, take max).
-- Put photos or sketches in `designs/<name>/ref/` (or `designs/<name>/ref/private/` for photos you wish to keep gitignored).
+### 4.1 Scaffold & Prepare References
+1. Scaffold the design directory (`new-design.sh` is idempotent and safe to run before or after adding reference files):
+   ```bash
+   ./tools/new-design.sh <name>
+   ```
+2. Sketch the part or write notes and measure physical mating objects with digital calipers (measure at 3 points, take max).
+3. Put sketches, notes, or photos in `designs/<name>/ref/` (or `designs/<name>/ref/private/` for files you want kept gitignored).
 
-### 4.2 Start
-Scaffold the design directory:
-```bash
-./tools/new-design.sh <name>
-```
+### 4.2 Start the Interview
 Start your agent session:
 ```text
 Read AGENTS.md. New design: <name>. Refs in designs/<name>/ref/. Interview me.
@@ -149,19 +146,22 @@ Read AGENTS.md. New design: <name>. Refs in designs/<name>/ref/. Interview me.
 
 ### 4.3 Interview & Spec
 - Answer the agent's questions (wall thickness, clearances, mounting methods, print constraints).
+- For large prints (>100 g / >2 hours) or custom sliding/tilting fits, ask for or approve `test-slice` and/or stepped `gauge` modes under the `part` parameter.
 - Review `designs/<name>/spec.md`. Ensure dimensions, fit classes, and assumptions match your intent.
 - Approve the spec explicitly ("Spec approved").
 
 ### 4.4 Build & Iterate
 - Keep `<windows-repo-path>\designs\<name>\<name>.scad` open in Windows OpenSCAD.
-- Every time the agent updates the code, OpenSCAD automatically reloads and renders.
-- Give concise feedback referring to views by name (`iso`, `front`, `top`, `section`) and specify dimension adjustments.
+- Every time the agent updates the code, OpenSCAD automatically reloads and renders, while the agent runs `tools/check.sh` (rendering PNG views and checking geometry/assertions without waiting on full multi-part STL/3MF exports).
+- Give concise feedback referring to views by name (`iso`, `back-iso`, `front`, `right`, `top`, `bottom`, `section_iso`, `section_front`) and specify dimension adjustments.
+- **Customizer tip**: OpenSCAD's Customizer panel cannot edit vector parameters with more than 4 elements (`[a, b, c, d]`). Edit longer lists directly in the `.scad` file.
 - Approve iterations explicitly once satisfied.
 
-### 4.5 Export & Slicing
+### 4.5 Export, Test Prints & Full Slicing
 - Prompt: `Export.`
-- The agent exports STLs and 3MFs to `designs/<name>/out/` and generates `print-notes.md`.
-- Open `<windows-repo-path>\designs\<name>\out\` in Explorer and drag the 3MF/STL files into Bambu Studio.
+- The agent runs `tools/export.sh`, exporting binary `.stl`, `.3mf`, and `summary_<part>.json` files for all printable `part` modes to `designs/<name>/out/` and generating `print-notes.md`.
+- Open `<windows-repo-path>\designs\<name>\out\` in Explorer and drag the `.3mf` or `.stl` files into Bambu Studio.
+- If the design includes a `gauge` or `test-slice`, print and test those first, report fit results to the agent to refine clearances, and then print the full part.
 
 ---
 
@@ -170,18 +170,19 @@ Read AGENTS.md. New design: <name>. Refs in designs/<name>/ref/. Interview me.
 ### Import & Layout
 - Drag `.3mf` or `.stl` onto the plate. If prompted, load geometry only.
 - Parts are modeled in their intended print orientation (bed face at $Z=0$).
-- If multiple parts are in a `print` layout, right-click $\rightarrow$ **Split to objects** for per-part positioning.
+- If multiple parts or gauge bars are in a single file (`print` or `gauge` layout), right-click $\rightarrow$ **Split to objects** for independent positioning.
 
 ### Process Settings for Functional Parts (0.4 mm Nozzle)
 Start with the standard **0.20 mm Standard** profile:
 
 | Setting | Location (Process tab) | Recommended Value |
 |---|---|---|
-| Wall generator | Quality > Walls | **Arachne** (handles thin walls cleanly) |
-| Wall loops | Strength > Walls | **3** (or **4** for structural brackets) |
+| Wall generator | Quality > Walls | **Arachne** (handles thin/tapered walls cleanly) |
+| Wall loops | Strength > Walls | **3** (use **4** for structural brackets, or **5–6** so 4–4.5 mm divider walls print solid) |
 | Top / bottom shell layers | Strength > Top/bottom shells | **5 top / 4 bottom** |
 | Sparse infill density | Strength > Infill | **15–25%** |
 | Sparse infill pattern | Strength > Infill | **Gyroid** |
+| Ironing | Quality > Ironing | **Off** (or **Top surfaces** for smooth sliding ramps/slot floors) |
 | Supports | Support | **Off** (parts are designed to print support-free) |
 | Brim | Others > Bed adhesion | **Off** (turn on 5 mm only for tall/narrow parts) |
 | Elephant foot compensation | Quality > Precision | Default (~0.15 mm) |
@@ -205,13 +206,14 @@ Start with the standard **0.20 mm Standard** profile:
 | `Can't open include file BOSL2/std.scad` in Windows GUI | `OPENSCADPATH` not set or OpenSCAD not restarted | Check path in Windows environment variables (Step 4), restart OpenSCAD |
 | Same error in WSL bash | `tools/env.sh` not sourced | Run scripts via `tools/*.sh` rather than raw `openscad` |
 | Windows GUI does not auto-reload | Auto-reload option disabled | Enable **Design > Automatic Reload and Preview**; press `F5` |
+| Vector parameter missing or greyed out in Customizer | OpenSCAD Customizer limit on vectors with $>4$ items | Edit vectors with more than 4 elements directly in the `.scad` file |
 | `Permission denied` running `tools/*.sh` in WSL | Windows mount lacking `metadata` option | Check `/etc/wsl.conf` (Step 2), restart with `wsl --shutdown`; or run `bash tools/<script>.sh` |
 | `git status` shows file permission changes | File mode noise on `/mnt/c` | Confirm `metadata` in `/etc/wsl.conf`; run `git config core.fileMode false` if needed |
-| Agent runs PowerShell or cannot find `openscad` | IDE opened repository in Windows mode | Reopen repository in WSL mode so commands run in Linux bash |
+| Agent runs PowerShell or cannot find `openscad` | IDE opened repository in Windows mode, or sandbox blocks `~/opt` | Reopen repository in WSL mode; allow unsandboxed execution if `~/opt/openscad` is outside workspace |
 | PNG export fails in WSL with GL/display error | Missing headless X11 display | `render.sh` automatically retries with `xvfb-run -a`; ensure `xvfb` is installed (`sudo apt install xvfb`) |
 | Render is very slow | OpenSCAD not using Manifold backend | Ensure `--backend=manifold` is active; check for heavy `minkowski()` or excessive `$fn` |
 | Submodule folder `lib/BOSL2` is empty | Cloned without submodules | Run `git submodule update --init --recursive` |
-| Part fits too tight or too loose | Printer/filament characteristics differ from defaults | Run `tolerance-coupon` to empirically measure clearances for your filament |
+| Part fits too tight or too loose | Printer/filament or long-wall geometry differs from coupon | Run `tolerance-coupon` for filament baseline, or print a design-specific `gauge` / `test-slice` |
 
 ---
 

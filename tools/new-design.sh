@@ -4,7 +4,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "${SCRIPT_DIR}/env.sh"
+OPENSCAD_REQUIRED=0 source "${SCRIPT_DIR}/env.sh"
 
 if [ $# -lt 1 ]; then
     echo "Usage: $0 <design-name>" >&2
@@ -14,15 +14,11 @@ fi
 DESIGN_NAME="$1"
 DESIGN_DIR="${REPO_ROOT}/designs/${DESIGN_NAME}"
 
-if [ -d "$DESIGN_DIR" ]; then
-    echo "Error: design directory '${DESIGN_DIR}' already exists" >&2
-    exit 1
-fi
-
 mkdir -p "${DESIGN_DIR}/ref/private"
 mkdir -p "${DESIGN_DIR}/out"
 
-cat << EOF > "${DESIGN_DIR}/spec.md"
+if [ ! -f "${DESIGN_DIR}/spec.md" ]; then
+    cat << EOF > "${DESIGN_DIR}/spec.md"
 # ${DESIGN_NAME} spec
 Status: DRAFT
 
@@ -48,12 +44,21 @@ Status: DRAFT
 
 ## Out of scope
 EOF
+    echo "Created designs/${DESIGN_NAME}/spec.md"
+else
+    echo "Preserved existing designs/${DESIGN_NAME}/spec.md"
+fi
 
-cat << EOF > "${DESIGN_DIR}/log.md"
+if [ ! -f "${DESIGN_DIR}/log.md" ]; then
+    cat << EOF > "${DESIGN_DIR}/log.md"
 # ${DESIGN_NAME} log
 
 ## Iteration Log
 EOF
+    echo "Created designs/${DESIGN_NAME}/log.md"
+else
+    echo "Preserved existing designs/${DESIGN_NAME}/log.md"
+fi
 
-echo "Scaffolded new design at: designs/${DESIGN_NAME}/"
+echo "Scaffolded design directory at: designs/${DESIGN_NAME}/"
 echo "Next step: interview user, populate spec.md, and get approval before creating ${DESIGN_NAME}.scad."

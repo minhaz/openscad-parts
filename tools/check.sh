@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # tools/check.sh <file.scad> [-D ...]
-# Runs render + export, checks for warnings/errors, and prints key dimensions and bounding box.
+# Runs render + fast geometry summary check, scans for warnings/errors, and prints REPORT values and bounding box.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -22,23 +22,44 @@ fi
 
 SCAD_DIR="$(cd "$(dirname "$INPUT_SCAD")" && pwd)"
 OUT_DIR="${SCAD_DIR}/out"
+mkdir -p "$OUT_DIR"
 
 echo "=== Running render.sh ==="
 "${SCRIPT_DIR}/render.sh" "$INPUT_SCAD" "${EXTRA_ARGS[@]}"
 
-echo "=== Running export.sh ==="
-"${SCRIPT_DIR}/export.sh" "$INPUT_SCAD" "${EXTRA_ARGS[@]}"
+echo "=== Computing geometry summary ==="
+CHECK_LOG="${OUT_DIR}/check.log"
+SUMMARY_JSON="${OUT_DIR}/summary.json"
+TMP_STL="${OUT_DIR}/check.tmp"
+: > "$CHECK_LOG"
+
+summary_cmd=(
+    "$OPENSCAD"
+    --export-format binstl
+    --backend=manifold
+    --summary all
+    --summary-file "$SUMMARY_JSON"
+)
+if [ ${#EXTRA_ARGS[@]} -gt 0 ]; then
+    summary_cmd+=("${EXTRA_ARGS[@]}")
+fi
+summary_cmd+=(-o "$TMP_STL" "$INPUT_SCAD")
+
+SUMMARY_FAILED=false
+if ! "${summary_cmd[@]}" >> "$CHECK_LOG" 2>&1; then
+    SUMMARY_FAILED=true
+fi
+rm -f "$TMP_STL"
 
 echo "=== Scan logs for warnings and errors ==="
 RENDER_LOG="${OUT_DIR}/render.log"
-EXPORT_LOG="${OUT_DIR}/export.log"
 
-FOUND_ISSUES=false
+FOUND_ISSUES="$SUMMARY_FAILED"
 issue_lines=""
 
 # Match diagnostic warnings, errors, deprecations, manifold errors, assertion failures
 # Exclude informational command-line echoes and clean manifold status lines
-for logfile in "$RENDER_LOG" "$EXPORT_LOG"; do
+for logfile in "$RENDER_LOG" "$CHECK_LOG"; do
     if [ -f "$logfile" ]; then
         matches=$(grep -iE 'warning|error|deprecated|manifold|assert' "$logfile" | \
             grep -v -- '--backend=manifold' | \
@@ -59,11 +80,7 @@ else
 fi
 
 echo "=== REPORT echo values ==="
-for logfile in "$RENDER_LOG" "$EXPORT_LOG"; do
-    if [ -f "$logfile" ]; then
-        grep -E 'REPORT ' "$logfile" | sed -E 's/.*"REPORT (.*)".*/REPORT \1/' | sort -u || true
-    fi
-done
+grep -hE 'REPORT ' "$RENDER_LOG" "$CHECK_LOG" 2>/dev/null | sed -E 's/.*"REPORT (.*)".*/REPORT \1/' | sort -u || true
 
 echo "=== Geometry Summary ==="
 SUMMARY_JSON="${OUT_DIR}/summary.json"

@@ -19,7 +19,7 @@ elif [ -x "$HOME/.local/bin/openscad" ]; then
     export OPENSCAD="$HOME/.local/bin/openscad"
 elif [ -x "$HOME/opt/openscad/squashfs-root/AppRun" ]; then
     export OPENSCAD="$HOME/opt/openscad/squashfs-root/AppRun"
-else
+elif [ "${OPENSCAD_REQUIRED:-1}" = "1" ]; then
     echo "ERROR: OpenSCAD binary not found" >&2
     exit 1
 fi
