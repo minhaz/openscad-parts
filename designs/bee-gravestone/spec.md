@@ -1,5 +1,5 @@
 # bee-gravestone spec
-Status: APPROVED (2026-10-20), rev 2 (2026-10-20, sharper 3D pyramid stake tips in XY and Z), rev 3 (2026-10-20, "R.I.P." with periods)
+Status: APPROVED (2026-10-20), rev 2 (2026-10-20, sharper 3D pyramid stake tips in XY and Z), rev 3 (2026-10-20, "R.I.P." with periods), rev 4 (2026-10-20, material changed to PLA for short-term outdoor use)
 
 ## Purpose
 Small decorative outdoor garden gravestone (`3.25 in` wide x `4.00 in` body height) with two bottom ground stakes, embossed `"R.I.P."` / `"BEE"` text, a simple geometric bee symbol, and a raised perimeter border frame. Designed as a 2-piece split model (`front` and `back` halves) printed flat on their inner split faces (`Z = 0`) without supports and glued together back-to-back.
@@ -88,10 +88,10 @@ No mating mechanical slots or holes; `tolerances.scad` clearances are not active
 REPORT keys: `body_w`, `body_h`, `stake_l`, `total_h`, `half_t`, `emboss_h`, `front_h`, `back_h`, `assembled_t`, `print_w`.
 
 ## Mounting
-Planted directly in outdoor soil via the two integrated bottom stakes. Front and back halves are bonded flat face-to-face using weather-resistant adhesive (two-part epoxy or polyurethane/outdoor cyanoacrylate).
+Planted directly in soil via the two integrated bottom stakes. Front and back halves are bonded flat face-to-face using standard cyanoacrylate (CA / super glue) or two-part epoxy.
 
 ## Material and environment
-- Material: PETG (weather, UV, and moisture resistant; tougher than PLA when pushing stakes into soil).
+- Material: PLA (short-term outdoor use; easier to print and bonds cleanly with standard CA glue).
 - Single color (optional filament color swap at `Z = 4.20 mm` on `front` part if contrasting border/text/bee is desired).
 
 ## Print orientation and supports
