@@ -10,7 +10,7 @@ Brim: none (large flat bed contact area; ensure clean PEI plate for PETG to prev
 Special:
 - **Load direction vs. layers:** Printing flat on the split face (`Z = 0`) places continuous XY perimeter loops along the entire length of the gravestone body and stakes. Soil insertion axial load (`-Y`) and wind/soil bending loads act along the continuous filament strands rather than peeling layers apart in Z tension.
 - **Ironing (optional):** Enable top-surface ironing on `front` (`Topmost surface only` or `All top surfaces`) for a smooth stone-like finish on the flat field and raised lettering/bee.
-- **Two-color contrast (optional):** Add a pause / filament swap in Bambu Studio at layer 21 (`Z = 4.20 mm`) on `front` so the raised `1.2 mm` border frame, `"RIP"`, `"BEE"`, and bee symbol print in a contrasting PETG color.
+- **Two-color contrast (optional):** Add a pause / filament swap in Bambu Studio at layer 21 (`Z = 4.20 mm`) on `front` so the raised `1.2 mm` border frame, `"R.I.P."`, `"BEE"`, and bee symbol print in a contrasting PETG color.
 - **Gluing:** Lightly scuff both flat `Z = 0` inner faces with 120–220 grit sandpaper, clean with isopropyl alcohol, apply two-part epoxy or outdoor-rated polyurethane/cyanoacrylate adhesive (including along the stakes), align the outer edges, and clamp until cured.
 Fit test:
 - Dry-fit `front` and `back` flat `Z = 0` faces together before gluing to confirm zero elephant-foot interference (`0.4 mm` bed chamfer provides relief) and flush outer perimeter alignment.

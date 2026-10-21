@@ -1,8 +1,8 @@
 # bee-gravestone spec
-Status: APPROVED (2026-10-20), rev 2 (2026-10-20, sharper 3D pyramid stake tips in XY and Z)
+Status: APPROVED (2026-10-20), rev 2 (2026-10-20, sharper 3D pyramid stake tips in XY and Z), rev 3 (2026-10-20, "R.I.P." with periods)
 
 ## Purpose
-Small decorative outdoor garden gravestone (`3.25 in` wide x `4.00 in` body height) with two bottom ground stakes, embossed `"RIP"` / `"BEE"` text, a simple geometric bee symbol, and a raised perimeter border frame. Designed as a 2-piece split model (`front` and `back` halves) printed flat on their inner split faces (`Z = 0`) without supports and glued together back-to-back.
+Small decorative outdoor garden gravestone (`3.25 in` wide x `4.00 in` body height) with two bottom ground stakes, embossed `"R.I.P."` / `"BEE"` text, a simple geometric bee symbol, and a raised perimeter border frame. Designed as a 2-piece split model (`front` and `back` halves) printed flat on their inner split faces (`Z = 0`) without supports and glued together back-to-back.
 
 Axes (print orientation for `front` and `back`):
 - X: across gravestone width (`body_w`).
@@ -47,9 +47,9 @@ No mating mechanical slots or holes; `tolerances.scad` clearances are not active
 1. **Perimeter border frame**:
    - Follows the tombstone body contour (arch, vertical sides, and horizontal bottom edge above stakes).
    - Inset from outer body edge by `border_inset = 1.5 mm` (just inside `edge_chamfer`), frame width `border_w = 3.0 mm`, corner radius matching outer bottom corners.
-2. **Stacked text (`"RIP"` over `"BEE"`)**:
+2. **Stacked text (`"R.I.P."` over `"BEE"`)**:
    - Font: `Liberation Sans:style=Bold`, centered on X.
-   - Line 1 (`"RIP"`): height `text_size_rip = 15.0 mm`, centered at `Y = Y_ground + 73.0 mm`.
+   - Line 1 (`"R.I.P."`): height `text_size_rip = 15.0 mm`, centered at `Y = Y_ground + 73.0 mm`.
    - Line 2 (`"BEE"`): height `text_size_bee = 15.0 mm`, centered at `Y = Y_ground + 52.0 mm`.
 3. **Simple geometric bee symbol**:
    - Centered at `X = 0`, `Y = Y_ground + 22.0 mm` (overall height `~26.0 mm`, width `~32.0 mm`):
@@ -77,7 +77,7 @@ No mating mechanical slots or holes; `tolerances.scad` clearances are not active
 | `bed_chamfer` | 0.4 | 0:0.1:1.0 | mm | Z=0 split-face edge chamfer (elephant-foot relief) |
 | `border_w` | 3.0 | 1.2:0.2:6.0 | mm | width of raised perimeter border frame |
 | `border_inset` | 1.5 | 1.2:0.1:4.0 | mm | inset of border frame from outer edge |
-| `text_line1` | `"RIP"` | - | string | top text line |
+| `text_line1` | `"R.I.P."` | - | string | top text line |
 | `text_line2` | `"BEE"` | - | string | second text line |
 | `text_size` | 15.0 | 8:0.5:25 | mm | font height for both lines |
 | `bee_scale` | 1.0 | 0.5:0.05:1.5 | - | scale factor for geometric bee symbol |

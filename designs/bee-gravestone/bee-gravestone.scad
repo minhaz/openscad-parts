@@ -47,7 +47,7 @@ border_w = 3.0; // [1.2:0.2:6.0]
 // Inset of border frame from outer body perimeter (mm)
 border_inset = 1.5; // [1.2:0.1:4.0]
 // First text line (upper)
-text_line1 = "RIP";
+text_line1 = "R.I.P.";
 // Second text line (lower)
 text_line2 = "BEE";
 // Font height for text lines (mm)
