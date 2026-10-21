@@ -1,5 +1,5 @@
 # bee-gravestone spec
-Status: APPROVED (2026-10-20)
+Status: APPROVED (2026-10-20), rev 2 (2026-10-20, sharper 3D pyramid stake tips in XY and Z)
 
 ## Purpose
 Small decorative outdoor garden gravestone (`3.25 in` wide x `4.00 in` body height) with two bottom ground stakes, embossed `"RIP"` / `"BEE"` text, a simple geometric bee symbol, and a raised perimeter border frame. Designed as a 2-piece split model (`front` and `back` halves) printed flat on their inner split faces (`Z = 0`) without supports and glued together back-to-back.
@@ -32,7 +32,7 @@ No mating mechanical slots or holes; `tolerances.scad` clearances are not active
 - Length: `stake_l = 40.0 mm` below body (`total_h = body_h + stake_l = 141.60 mm`).
 - Width: `stake_w = 10.0 mm` each.
 - Spacing: `stake_spacing = 45.0 mm` center-to-center (`X = -22.5 mm` and `+22.5 mm`).
-- Tips: bottom `stake_tip_l = 15.0 mm` tapers symmetrically in X down to `stake_tip_w = 1.6 mm` (>= 2 extrusion widths).
+- Tips: bottom `stake_tip_l = 18.0 mm` tapers symmetrically in X down to `stake_tip_w = 0.8 mm` (2 extrusion widths) and slopes in Z from `half_t = 4.0 mm` down to `stake_tip_h = 0.8 mm` at the tip (forming a `0.8 x 1.6 mm` 4-sided pyramid point when the two halves are glued together, while keeping the `Z = 0` glue face completely flat).
 - Root fillets: `stake_fillet_r = 3.0 mm` concave XY fillets where stake sides meet the bottom edge of the body.
 
 ### Split halves, thickness, and chamfers (Z)
@@ -49,13 +49,13 @@ No mating mechanical slots or holes; `tolerances.scad` clearances are not active
    - Inset from outer body edge by `border_inset = 1.5 mm` (just inside `edge_chamfer`), frame width `border_w = 3.0 mm`, corner radius matching outer bottom corners.
 2. **Stacked text (`"RIP"` over `"BEE"`)**:
    - Font: `Liberation Sans:style=Bold`, centered on X.
-   - Line 1 (`"RIP"`): height `text_size_rip = 15.0 mm`, centered at `Y = Y_ground + 68.0 mm`.
-   - Line 2 (`"BEE"`): height `text_size_bee = 15.0 mm`, centered at `Y = Y_ground + 47.0 mm`.
+   - Line 1 (`"RIP"`): height `text_size_rip = 15.0 mm`, centered at `Y = Y_ground + 73.0 mm`.
+   - Line 2 (`"BEE"`): height `text_size_bee = 15.0 mm`, centered at `Y = Y_ground + 52.0 mm`.
 3. **Simple geometric bee symbol**:
-   - Centered at `X = 0`, `Y = Y_ground + 23.0 mm` (overall height `bee_size = 25.0 mm`, width `~32.0 mm`):
+   - Centered at `X = 0`, `Y = Y_ground + 22.0 mm` (overall height `~26.0 mm`, width `~32.0 mm`):
      - **Body**: oval `13.0 mm` wide x `17.0 mm` tall with a pointed stinger bottom, divided horizontally by two `1.8 mm` wide gaps into 3 bold raised segments (thorax + 2 abdomen stripes).
-     - **Head**: `6.0 mm` diameter circle above the body (`1.2 mm` gap), topped with two simple angled antennae (`1.6 mm` wide x `4.5 mm` long at `±30 deg`).
-     - **Wings**: two symmetric angled oval loops (`12.5 mm` long x `7.5 mm` wide, `2.0 mm` wall width with recessed interior, angled at `±25 deg`) flanking the upper body.
+     - **Head**: `6.2 mm` diameter circle above the body (`1.2 mm` gap), topped with two simple angled antennae (`1.6 mm` wide, solidly joined to the head at `±30 deg`).
+     - **Wings**: two symmetric angled oval loops (`14.0 mm` long x `9.0 mm` wide, `2.1 mm` wall width with recessed interior, angled at `±22 deg`) flanking the upper body.
 
 ## Parameters (exposed)
 | Name | Default | Range | Unit | Note |
@@ -68,8 +68,9 @@ No mating mechanical slots or holes; `tolerances.scad` clearances are not active
 | `stake_l` | 40.0 | 15:1:80 | mm | stake length below body |
 | `stake_w` | 10.0 | 5:0.5:20 | mm | width of each stake |
 | `stake_spacing` | 45.0 | 20:1:150 | mm | center-to-center distance between stakes |
-| `stake_tip_l` | 15.0 | 5:1:30 | mm | length of tapered point at bottom of stake |
-| `stake_tip_w` | 1.6 | 0.8:0.2:5.0 | mm | blunt tip width (>= 2 extrusion widths) |
+| `stake_tip_l` | 18.0 | 5:1:30 | mm | length of tapered point at bottom of stake |
+| `stake_tip_w` | 0.8 | 0.8:0.2:5.0 | mm | blunt tip width (>= 2 extrusion widths) |
+| `stake_tip_h` | 0.8 | 0.6:0.2:4.0 | mm | Z height of each half at stake tip |
 | `stake_fillet_r` | 3.0 | 0:0.5:8.0 | mm | concave fillet radius at stake-to-body root |
 | `bottom_corner_r` | 3.0 | 0:0.5:10.0 | mm | lower outer corner radius of gravestone body |
 | `edge_chamfer` | 1.2 | 0.4:0.2:2.5 | mm | top outer perimeter chamfer on each half |
@@ -82,7 +83,7 @@ No mating mechanical slots or holes; `tolerances.scad` clearances are not active
 | `bee_scale` | 1.0 | 0.5:0.05:1.5 | - | scale factor for geometric bee symbol |
 | `print_gap` | 5.0 | 2:1:20 | mm | X gap between halves in `print` mode |
 | `section` | false | - | bool | cut-away debug view |
-| `section_axis` | `"x"` | `x, y` | - | default `"x"` cuts through X=0 showing YZ profile |
+| `section_axis` | `"y"` | `x, y` | - | default `"y"` cuts at `Y = y_bee` showing XZ cross-section in `section_front` |
 
 REPORT keys: `body_w`, `body_h`, `stake_l`, `total_h`, `half_t`, `emboss_h`, `front_h`, `back_h`, `assembled_t`, `print_w`.
 
@@ -99,7 +100,7 @@ Planted directly in outdoor soil via the two integrated bottom stakes. Front and
 - Default `print` layout footprint: `170.10 x 141.60 x 5.20 mm` (fits well within `250 x 250 x 250 mm`).
 
 ## Assumptions (things not stated by user)
-1. Stake dimensions: `40.0 mm` length, `10.0 mm` width, `45.0 mm` center-to-center spacing, `15.0 mm` tip taper to `1.6 mm` width, `3.0 mm` root fillet.
+1. Stake dimensions: `40.0 mm` length, `10.0 mm` width, `45.0 mm` center-to-center spacing, `18.0 mm` tip taper to `0.8 mm` width and `0.8 mm` Z height per half, `3.0 mm` root fillet.
 2. Slab thickness: `4.0 mm` per half (`8.0 mm` glued slab) + `1.2 mm` embossed height on `front` (`9.2 mm` total assembled thickness).
 3. Chamfers: `1.2 mm` outer edge chamfer on both halves; `0.4 mm` bed-edge chamfer on the `Z = 0` split face for elephant-foot relief.
 4. Raised border frame: `3.0 mm` wide, inset `1.5 mm` from the outer body edge, around the gravestone body above the stakes.
