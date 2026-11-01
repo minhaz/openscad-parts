@@ -21,6 +21,7 @@ For AI agent design conventions and coding rules, see **[AGENTS.md](AGENTS.md)**
 
 | Design | Status | Description |
 |---|---|---|
+| [**hdd-cage**](designs/hdd-cage/) | Validated | Parametric 2-bay 3.5" HDD high-airflow space-frame enclosure for HP EliteDesk 800 G3 TWR. Features lateral slide-in over the $8\text{ mm}$ case lip, 3-tier braced diamond vent rails, gusseted dovetail `screw-bar` retention, and a 5-key dovetail clearance gauge. |
 | [**laptop-holder**](designs/laptop-holder/) | Validated | Parametric shelf organizer holding multiple laptops and tablets upright on edge. Features custom per-slot widths, $15^\circ$ raked & tapered entry noses, a $30\text{ mm}$ lead-in ramp, and a multi-step clearance test gauge. |
 | [**tolerance-coupon**](designs/tolerance-coupon/) | Calibrated | Standardized test coupon measuring physical clearances for slot widths ($+0.0$ to $+0.6\text{ mm}$) and hole diameters ($\varnothing 8.0$ to $8.6\text{ mm}$) to establish press, snug, slide, and free fits. |
 
